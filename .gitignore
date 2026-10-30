@@ -1,0 +1,26 @@
+# Dependencies and generated output
+node_modules/
+dist/
+build/
+coverage/
+target/
+.output/
+*.tsbuildinfo
+
+# Local deployment/runtime state
+.grok/
+.vercel/
+.tanstack/
+.project_id
+.node_modules.lock
+
+# Secrets and local environment files
+.env
+.env.*
+!.env.example
+*.local
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.log
