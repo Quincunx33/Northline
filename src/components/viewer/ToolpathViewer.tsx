@@ -9,6 +9,32 @@ import { currentProfile, useInspector } from "@/lib/store";
 import { cncToThree, displaySamples, pointOnSegment } from "@/lib/simulate";
 import type { Finding, MachineConfig, Segment } from "@/lib/types";
 
+// Silence THREE.Clock deprecation warning emitted by @react-three/fiber internal clock initialization
+if (typeof (THREE as unknown as { setConsoleFunction?: unknown }).setConsoleFunction === "function") {
+  const threeWithConsole = THREE as unknown as {
+    setConsoleFunction: (fn: (type: string, message: unknown, ...params: unknown[]) => void) => void;
+    getConsoleFunction?: () => ((type: string, message: unknown, ...params: unknown[]) => void) | null;
+  };
+  const prevFn = typeof threeWithConsole.getConsoleFunction === "function" ? threeWithConsole.getConsoleFunction() : null;
+  threeWithConsole.setConsoleFunction((type, message, ...params) => {
+    if (
+      type === "warn" &&
+      typeof message === "string" &&
+      message.includes("Clock: This module has been deprecated")
+    ) {
+      return;
+    }
+    if (prevFn) {
+      prevFn(type, message, ...params);
+    } else {
+      const logger = (console as unknown as Record<string, (...args: unknown[]) => void>)[type];
+      if (typeof logger === "function") {
+        logger(message, ...params);
+      }
+    }
+  });
+}
+
 const RAPID = "#8eadd8";
 const CUT = "#7dbe9a";
 const WARN = "#e2a53a";
@@ -589,11 +615,16 @@ export function ToolpathViewer() {
       >
         <Scene />
       </Canvas>
-      <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-1">
-        <p className="font-mono text-xs text-fg">
-          X {tool[0].toFixed(3)} · Y {tool[1].toFixed(3)} · Z {tool[2].toFixed(3)}
-        </p>
-        <p className="text-xs text-muted">
+      {/* Frosted HUD Readout (Top-Left) */}
+      <div className="pointer-events-none absolute left-2.5 top-2.5 z-10 flex max-w-[calc(100%-1.25rem)] sm:max-w-xs flex-col gap-1 rounded-lg border border-border/80 bg-surface/90 px-2.5 py-1.5 sm:px-3 sm:py-2 shadow-md backdrop-blur-md">
+        <div className="flex items-center gap-2 font-mono text-xs tabular-nums tracking-wide text-fg">
+          <span><span className="text-primary font-semibold">X</span> {tool[0].toFixed(3)}</span>
+          <span className="text-muted/60">·</span>
+          <span><span className="text-ok font-semibold">Y</span> {tool[1].toFixed(3)}</span>
+          <span className="text-muted/60">·</span>
+          <span><span className="text-rapid font-semibold">Z</span> {tool[2].toFixed(3)}</span>
+        </div>
+        <p className="truncate text-[11px] text-muted">
           {seg
             ? `Line ${seg.line} · ${kindLabel(seg.kind)}${seg.arc ? ` ${seg.arc.plane} R${seg.arc.radius.toFixed(2)}` : ""} · ${seg.feedMode === "rapid" ? "rapid" : seg.feedMmMin ? `${seg.feedMmMin.toFixed(0)} mm/min` : "feed n/a"}`
             : status === "running"
@@ -601,11 +632,15 @@ export function ToolpathViewer() {
               : "No motion yet"}
         </p>
       </div>
-      <div className="pointer-events-none absolute bottom-3 left-3 max-w-xs text-xs text-muted">
-        Tip is the programmed point. Shank follows +Z and is not a measured cutter. Dashed rapid, solid cut. {grid} mm grid on Z0.
-        {analysis?.renderSimplified ? " Display sampling was reduced; lengths stay analytic." : ""}
+
+      {/* Grid and Shank Legend (Spacious Desktop only) */}
+      <div className="pointer-events-none absolute bottom-2.5 left-2.5 z-10 hidden max-w-xs rounded-md border border-border/50 bg-bg/70 px-2 py-1 text-[11px] text-muted backdrop-blur-sm xl:block">
+        Dashed rapid · Solid cut · {grid} mm grid on Z0.
+        {analysis?.renderSimplified ? " Simplified display sampling." : ""}
       </div>
-      <div className="absolute right-3 top-3 flex flex-wrap justify-end gap-1">
+
+      {/* Camera View Presets Toolbar: Docked at bottom-right on mobile, tablet, and split-screen to guarantee zero overlap with top-left HUD; only top-right on extra-wide screens */}
+      <div className="absolute right-2.5 bottom-2.5 xl:bottom-auto xl:top-3 xl:right-3 z-10 flex items-center gap-0.5 sm:gap-1 overflow-x-auto rounded-lg border border-border/80 bg-surface/90 p-1 shadow-md backdrop-blur-md">
         <ViewButton preset="fit" label="Fit" />
         <ViewButton preset="iso" label="Iso" />
         <ViewButton preset="top" label="Top" />
@@ -622,7 +657,7 @@ function ViewButton({ preset, label }: { preset: "fit" | "iso" | "top" | "front"
   return (
     <button
       type="button"
-      className="h-9 rounded-md border border-border bg-surface/90 px-2.5 text-xs text-fg"
+      className="inline-flex h-7 sm:h-8 items-center justify-center rounded-md px-1.5 sm:px-2.5 text-[11px] sm:text-xs font-medium text-fg transition-colors hover:bg-raised active:scale-95"
       onClick={() => request(preset)}
     >
       {label}
@@ -636,9 +671,10 @@ function OrthoButton() {
   return (
     <button
       type="button"
-      className="h-9 rounded-md border border-border bg-surface/90 px-2.5 text-xs text-fg"
+      className="inline-flex h-7 sm:h-8 items-center justify-center rounded-md px-1.5 sm:px-2.5 text-[11px] sm:text-xs font-medium text-muted transition-colors hover:bg-raised hover:text-fg active:scale-95"
       onClick={() => setOrtho(!ortho)}
       aria-pressed={ortho}
+      title={ortho ? "Switch to Perspective View" : "Switch to Orthographic View"}
     >
       {ortho ? "Ortho" : "Persp"}
     </button>

@@ -5,6 +5,17 @@ import appCss from "../styles.css?url";
 
 const APP_NAME = "Northline";
 
+// Suppress THREE.Clock deprecation warning emitted by @react-three/fiber until upstream uses THREE.Timer
+if (typeof window !== "undefined") {
+  const origWarn = console.warn;
+  console.warn = (...args: unknown[]) => {
+    if (typeof args[0] === "string" && args[0].includes("Clock: This module has been deprecated")) {
+      return;
+    }
+    origWarn(...args);
+  };
+}
+
 export const Route = createRootRoute({
   head: () => ({
     meta: [

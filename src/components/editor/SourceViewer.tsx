@@ -1,3 +1,4 @@
+import { Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useInspector } from "@/lib/store";
 import type { Finding } from "@/lib/types";
@@ -67,18 +68,28 @@ export function SourceViewer() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-        <label className="sr-only" htmlFor="gcode-search">
-          Search program
-        </label>
-        <input
-          id="gcode-search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search program"
-          className="h-9 min-w-0 flex-1 rounded-md border border-border bg-bg px-2 font-mono text-xs text-fg outline-none focus:border-primary"
-        />
-        <span className="shrink-0 font-mono text-xs text-muted">
+      <div className="flex items-center gap-2 border-b border-border bg-surface/50 px-3 py-2 sm:px-4">
+        <div className="relative flex min-w-0 flex-1 items-center">
+          <Search className="pointer-events-none absolute left-2.5 size-3.5 text-muted" />
+          <input
+            id="gcode-search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search block, G-code, or comment…"
+            className="h-8.5 w-full rounded-md border border-border bg-bg pl-8 pr-7 font-mono text-xs text-fg outline-none transition-colors focus:border-primary"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="absolute right-2 text-muted hover:text-fg"
+              aria-label="Clear search"
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
+        </div>
+        <span className="shrink-0 font-mono text-xs tabular-nums text-muted">
           {query ? `${matches.length} hits` : `${lines.length} lines`}
         </span>
       </div>
