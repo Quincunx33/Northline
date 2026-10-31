@@ -127,6 +127,7 @@ The `wasm-bindgen-cli` version must match **0.2.100** used by the Rust crate.
 <div align="center">
 
 <p><strong>Built with care by <a href="https://github.com/Quincunx33">Quincunx33</a></strong></p>
+<p><strong>AI Assistance Credit:</strong> Grok AI</p>
 <p><em>Understand the code. Visualize the motion. Inspect with confidence.</em></p>
 
 <img src="https://capsule-render.vercel.app/api?type=waving&amp;color=0:0f172a,50:0e7490,100:22d3ee&amp;height=100&amp;section=footer" alt="Northline footer decoration" width="100%" />
