@@ -615,38 +615,41 @@ export function ToolpathViewer() {
       >
         <Scene />
       </Canvas>
-      {/* Frosted HUD Readout (Top-Left) */}
-      <div className="pointer-events-none absolute left-2.5 top-2.5 z-10 flex max-w-[calc(100%-1.25rem)] sm:max-w-xs flex-col gap-1 rounded-lg border border-border/80 bg-surface/90 px-2.5 py-1.5 sm:px-3 sm:py-2 shadow-md backdrop-blur-md">
-        <div className="flex items-center gap-2 font-mono text-xs tabular-nums tracking-wide text-fg">
-          <span><span className="text-primary font-semibold">X</span> {tool[0].toFixed(3)}</span>
-          <span className="text-muted/60">·</span>
-          <span><span className="text-ok font-semibold">Y</span> {tool[1].toFixed(3)}</span>
-          <span className="text-muted/60">·</span>
-          <span><span className="text-rapid font-semibold">Z</span> {tool[2].toFixed(3)}</span>
+      {/* Top Floating Controls Bar: HUD on Left, View Presets on Right. Flex-wrap guarantees zero collision on any screen width! */}
+      <div className="pointer-events-none absolute inset-x-2.5 top-2.5 z-10 flex flex-wrap items-start justify-between gap-2">
+        {/* Frosted HUD Readout */}
+        <div className="pointer-events-auto flex max-w-full sm:max-w-xs flex-col gap-1 rounded-lg border border-border/80 bg-surface/90 px-2.5 py-1.5 sm:px-3 sm:py-2 shadow-md backdrop-blur-md">
+          <div className="flex items-center gap-2 font-mono text-xs tabular-nums tracking-wide text-fg">
+            <span><span className="text-primary font-semibold">X</span> {tool[0].toFixed(3)}</span>
+            <span className="text-muted/60">·</span>
+            <span><span className="text-ok font-semibold">Y</span> {tool[1].toFixed(3)}</span>
+            <span className="text-muted/60">·</span>
+            <span><span className="text-rapid font-semibold">Z</span> {tool[2].toFixed(3)}</span>
+          </div>
+          <p className="truncate text-[11px] text-muted">
+            {seg
+              ? `Line ${seg.line} · ${kindLabel(seg.kind)}${seg.arc ? ` ${seg.arc.plane} R${seg.arc.radius.toFixed(2)}` : ""} · ${seg.feedMode === "rapid" ? "rapid" : seg.feedMmMin ? `${seg.feedMmMin.toFixed(0)} mm/min` : "feed n/a"}`
+              : status === "running"
+                ? "Inspecting…"
+                : "No motion yet"}
+          </p>
         </div>
-        <p className="truncate text-[11px] text-muted">
-          {seg
-            ? `Line ${seg.line} · ${kindLabel(seg.kind)}${seg.arc ? ` ${seg.arc.plane} R${seg.arc.radius.toFixed(2)}` : ""} · ${seg.feedMode === "rapid" ? "rapid" : seg.feedMmMin ? `${seg.feedMmMin.toFixed(0)} mm/min` : "feed n/a"}`
-            : status === "running"
-              ? "Inspecting…"
-              : "No motion yet"}
-        </p>
+
+        {/* Camera View Presets Toolbar */}
+        <div className="pointer-events-auto flex items-center gap-0.5 sm:gap-1 overflow-x-auto rounded-lg border border-border/80 bg-surface/90 p-1 shadow-md backdrop-blur-md">
+          <ViewButton preset="fit" label="Fit" />
+          <ViewButton preset="iso" label="Iso" />
+          <ViewButton preset="top" label="Top" />
+          <ViewButton preset="front" label="Front" />
+          <ViewButton preset="side" label="Side" />
+          <OrthoButton />
+        </div>
       </div>
 
       {/* Grid and Shank Legend (Spacious Desktop only) */}
       <div className="pointer-events-none absolute bottom-2.5 left-2.5 z-10 hidden max-w-xs rounded-md border border-border/50 bg-bg/70 px-2 py-1 text-[11px] text-muted backdrop-blur-sm xl:block">
         Dashed rapid · Solid cut · {grid} mm grid on Z0.
         {analysis?.renderSimplified ? " Simplified display sampling." : ""}
-      </div>
-
-      {/* Camera View Presets Toolbar: Docked at bottom-right on mobile, tablet, and split-screen to guarantee zero overlap with top-left HUD; only top-right on extra-wide screens */}
-      <div className="absolute right-2.5 bottom-2.5 xl:bottom-auto xl:top-3 xl:right-3 z-10 flex items-center gap-0.5 sm:gap-1 overflow-x-auto rounded-lg border border-border/80 bg-surface/90 p-1 shadow-md backdrop-blur-md">
-        <ViewButton preset="fit" label="Fit" />
-        <ViewButton preset="iso" label="Iso" />
-        <ViewButton preset="top" label="Top" />
-        <ViewButton preset="front" label="Front" />
-        <ViewButton preset="side" label="Side" />
-        <OrthoButton />
       </div>
     </div>
   );

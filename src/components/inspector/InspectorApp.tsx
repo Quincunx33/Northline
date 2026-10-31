@@ -5,6 +5,7 @@ import {
   Check,
   ChevronDown,
   Code,
+  Columns,
   Download,
   FolderOpen,
   Info,
@@ -62,6 +63,7 @@ export function InspectorApp() {
 
   // Responsive state enhancements
   const [advisoryOpen, setAdvisoryOpen] = useState(false);
+  const [tabletView, setTabletView] = useState<"split" | "3d" | "code" | "inspect" | "setup">("split");
   const [tabletTab, setTabletTab] = useState<"inspect" | "setup" | "code">("inspect");
 
   const activeErrors = analysis?.stats.errorCount ?? 0;
@@ -170,17 +172,17 @@ export function InspectorApp() {
             <span className="truncate max-w-[160px]">{progress || "Inspecting…"}</span>
           </div>
         ) : analysis ? (
-          <div className="hidden items-center gap-3 text-xs xl:flex shrink-0">
+          <div className="hidden items-center gap-2.5 text-xs md:flex shrink-0">
             <span className="text-muted">
               Est: <strong className="font-mono text-fg">{formatDuration(analysis.time.totalTimeS)}</strong>
             </span>
-            <span className="text-border">·</span>
-            <span className="text-muted">
+            <span className="text-border hidden xl:inline">·</span>
+            <span className="text-muted hidden xl:inline">
               Lines: <strong className="font-mono text-fg">{analysis.lineCount}</strong>
             </span>
             <span className="text-border">·</span>
             <span className={cn("font-medium", activeErrors > 0 ? "text-danger" : "text-ok")}>
-              {activeErrors > 0 ? `${activeErrors} errors` : "No errors"}
+              {activeErrors > 0 ? `${activeErrors} errors` : "0 errors"}
             </span>
           </div>
         ) : null}
@@ -290,64 +292,207 @@ export function InspectorApp() {
       </div>
 
       {/* ──────────────────────────────────────────────────────────── */}
-      {/* 2. TABLET VIEW (md: 768px - 1023px)                          */}
-      {/* 2-Pane Workbench: 3D Viewport (Left) + Tabbed Side (Right)   */}
+      {/* 2. TABLET WORKBENCH (md: 768px - 1023px)                     */}
+      {/* Adaptable mode: Split View, 3D Fullscreen, Code, Diagnostics */}
       {/* ──────────────────────────────────────────────────────────── */}
-      <div className="hidden min-h-0 flex-1 md:flex lg:hidden">
-        {/* Left Stage: 3D Toolpath Viewer & Playback */}
-        <div className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1">
-            <ToolpathViewer />
+      <div className="hidden min-h-0 flex-1 md:flex lg:hidden flex-col">
+        {/* Tablet Navigation & Mode Switcher Bar */}
+        <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface/70 px-3 py-1.5 backdrop-blur-md">
+          {/* Mode Selector Segmented Control */}
+          <div className="flex items-center gap-1 rounded-lg border border-border bg-bg/90 p-0.5">
+            <button
+              type="button"
+              onClick={() => setTabletView("split")}
+              className={cn(
+                "inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all active:scale-95",
+                tabletView === "split"
+                  ? "bg-primary text-primary-fg font-semibold shadow-xs"
+                  : "text-muted hover:text-fg hover:bg-surface",
+              )}
+            >
+              <Columns className="size-3.5" />
+              <span>Split</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTabletView("3d")}
+              className={cn(
+                "inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all active:scale-95",
+                tabletView === "3d"
+                  ? "bg-primary text-primary-fg font-semibold shadow-xs"
+                  : "text-muted hover:text-fg hover:bg-surface",
+              )}
+            >
+              <Box className="size-3.5" />
+              <span>3D View</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTabletView("code")}
+              className={cn(
+                "inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all active:scale-95",
+                tabletView === "code"
+                  ? "bg-primary text-primary-fg font-semibold shadow-xs"
+                  : "text-muted hover:text-fg hover:bg-surface",
+              )}
+            >
+              <Code className="size-3.5" />
+              <span>G-Code</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTabletView("inspect")}
+              className={cn(
+                "inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all active:scale-95",
+                tabletView === "inspect"
+                  ? "bg-primary text-primary-fg font-semibold shadow-xs"
+                  : "text-muted hover:text-fg hover:bg-surface",
+              )}
+            >
+              <Activity className="size-3.5" />
+              <span>
+                Inspect{" "}
+                {activeErrors > 0 && (
+                  <span className={tabletView === "inspect" ? "text-primary-fg font-bold" : "text-danger"}>
+                    ({activeErrors})
+                  </span>
+                )}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTabletView("setup")}
+              className={cn(
+                "inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all active:scale-95",
+                tabletView === "setup"
+                  ? "bg-primary text-primary-fg font-semibold shadow-xs"
+                  : "text-muted hover:text-fg hover:bg-surface",
+              )}
+            >
+              <Sliders className="size-3.5" />
+              <span>Setup</span>
+            </button>
           </div>
-          <PlaybackBar />
+
+          {/* Quick Tablet Stat Pill */}
+          {analysis && (
+            <div className="flex items-center gap-2 rounded-md bg-raised/80 px-2.5 py-1 text-xs">
+              <span className="text-muted">
+                Est: <strong className="font-mono text-fg">{formatDuration(analysis.time.totalTimeS)}</strong>
+              </span>
+              <span className="text-border">·</span>
+              <span className={cn("font-medium", activeErrors > 0 ? "text-danger" : "text-ok")}>
+                {activeErrors > 0 ? `${activeErrors} errors` : "0 errors"}
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Right Stage: Tabbed Inspector/Setup/Code Workbench */}
-        <aside className="flex w-88 shrink-0 flex-col border-l border-border bg-surface/20">
-          {/* Tablet Tab Bar */}
-          <div className="flex shrink-0 border-b border-border bg-surface/60">
-            <button
-              type="button"
-              className={cn(
-                "flex-1 h-10 text-xs font-medium transition-colors",
-                tabletTab === "inspect" ? "border-b-2 border-primary text-fg font-semibold bg-surface/80" : "text-muted hover:text-fg",
-              )}
-              onClick={() => setTabletTab("inspect")}
-            >
-              Inspect {activeErrors > 0 && <span className="ml-1 text-danger">({activeErrors})</span>}
-            </button>
-            <button
-              type="button"
-              className={cn(
-                "flex-1 h-10 text-xs font-medium transition-colors",
-                tabletTab === "code" ? "border-b-2 border-primary text-fg font-semibold bg-surface/80" : "text-muted hover:text-fg",
-              )}
-              onClick={() => setTabletTab("code")}
-            >
-              G-Code
-            </button>
-            <button
-              type="button"
-              className={cn(
-                "flex-1 h-10 text-xs font-medium transition-colors",
-                tabletTab === "setup" ? "border-b-2 border-primary text-fg font-semibold bg-surface/80" : "text-muted hover:text-fg",
-              )}
-              onClick={() => setTabletTab("setup")}
-            >
-              Setup
-            </button>
-          </div>
+        {/* Tablet Content Viewports */}
+        <div className="min-h-0 flex-1 relative flex">
+          {/* 1. Split View Mode */}
+          {tabletView === "split" && (
+            <div className="flex min-h-0 flex-1">
+              {/* Left Column: 3D Viewport with Compact Playback Bar */}
+              <div className="flex min-h-0 flex-1 flex-col">
+                <div className="min-h-0 flex-1">
+                  <ToolpathViewer />
+                </div>
+                <PlaybackBar compact />
+              </div>
 
-          <div className="min-h-0 flex-1 overflow-auto">
-            {tabletTab === "inspect" && <InspectPanel />}
-            {tabletTab === "code" && (
-              <div className="h-full">
+              {/* Right Column: Tabbed Inspector / G-Code / Setup */}
+              <aside className="flex w-[40%] min-w-[310px] max-w-[420px] shrink-0 flex-col border-l border-border bg-surface/20">
+                <div className="flex shrink-0 border-b border-border bg-surface/60">
+                  <button
+                    type="button"
+                    className={cn(
+                      "flex-1 h-10 text-xs font-medium transition-colors",
+                      tabletTab === "inspect"
+                        ? "border-b-2 border-primary text-fg font-semibold bg-surface/80"
+                        : "text-muted hover:text-fg",
+                    )}
+                    onClick={() => setTabletTab("inspect")}
+                  >
+                    Inspect {activeErrors > 0 && <span className="ml-1 text-danger">({activeErrors})</span>}
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(
+                      "flex-1 h-10 text-xs font-medium transition-colors",
+                      tabletTab === "code"
+                        ? "border-b-2 border-primary text-fg font-semibold bg-surface/80"
+                        : "text-muted hover:text-fg",
+                    )}
+                    onClick={() => setTabletTab("code")}
+                  >
+                    G-Code
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(
+                      "flex-1 h-10 text-xs font-medium transition-colors",
+                      tabletTab === "setup"
+                        ? "border-b-2 border-primary text-fg font-semibold bg-surface/80"
+                        : "text-muted hover:text-fg",
+                    )}
+                    onClick={() => setTabletTab("setup")}
+                  >
+                    Setup
+                  </button>
+                </div>
+
+                <div className="min-h-0 flex-1 overflow-auto">
+                  {tabletTab === "inspect" && <InspectPanel />}
+                  {tabletTab === "code" && (
+                    <div className="h-full">
+                      <SourceViewer />
+                    </div>
+                  )}
+                  {tabletTab === "setup" && <SetupPanel />}
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* 2. Fullscreen 3D View Mode */}
+          {tabletView === "3d" && (
+            <div className="flex min-h-0 flex-1 flex-col">
+              <div className="min-h-0 flex-1">
+                <ToolpathViewer />
+              </div>
+              <PlaybackBar />
+            </div>
+          )}
+
+          {/* 3. Fullscreen G-Code Mode */}
+          {tabletView === "code" && (
+            <div className="flex min-h-0 flex-1 flex-col">
+              <div className="min-h-0 flex-1">
                 <SourceViewer />
               </div>
-            )}
-            {tabletTab === "setup" && <SetupPanel />}
-          </div>
-        </aside>
+              <PlaybackBar compact />
+            </div>
+          )}
+
+          {/* 4. Fullscreen Inspect Diagnostics Mode */}
+          {tabletView === "inspect" && (
+            <div className="h-full flex-1 overflow-auto p-3">
+              <div className="mx-auto max-w-4xl">
+                <InspectPanel />
+              </div>
+            </div>
+          )}
+
+          {/* 5. Fullscreen Setup Mode */}
+          {tabletView === "setup" && (
+            <div className="h-full flex-1 overflow-auto p-3">
+              <div className="mx-auto max-w-2xl">
+                <SetupPanel />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ──────────────────────────────────────────────────────────── */}
@@ -362,7 +507,7 @@ export function InspectorApp() {
               <div className="min-h-0 flex-1">
                 <ToolpathViewer />
               </div>
-              <PlaybackBar />
+              <PlaybackBar compact />
             </div>
           )}
           {mobileTab === "code" && (
@@ -370,7 +515,7 @@ export function InspectorApp() {
               <div className="min-h-0 flex-1">
                 <SourceViewer />
               </div>
-              <PlaybackBar />
+              <PlaybackBar compact />
             </div>
           )}
           {mobileTab === "inspect" && (
@@ -465,7 +610,7 @@ function ProgramPane() {
   );
 }
 
-function PlaybackBar() {
+function PlaybackBar({ compact = false }: { compact?: boolean }) {
   const playing = useInspector((s) => s.playing);
   const togglePlay = useInspector((s) => s.togglePlay);
   const restart = useInspector((s) => s.restart);
@@ -485,157 +630,223 @@ function PlaybackBar() {
 
   return (
     <div className="shrink-0 border-b border-border bg-surface/95 px-3 py-2 backdrop-blur-sm sm:px-4">
-      {/* ── Mobile Layout (< 640px): 2-Row Stacked ── */}
-      <div className="flex flex-col gap-2 sm:hidden">
-        {/* Row 1: Scrubber with timestamps */}
-        <div className="flex items-center gap-2">
-          <span className="w-12 text-left font-mono text-[11px] tabular-nums text-muted">
-            {formatDuration(currentTime)}
-          </span>
-          <label className="sr-only" htmlFor="scrub-mobile">
-            Timeline
-          </label>
-          <input
-            id="scrub-mobile"
-            className="h-8 min-w-0 flex-1 accent-primary touch-pan-x"
-            type="range"
-            min={0}
-            max={1000}
-            value={Math.round(cursor * 1000)}
-            onChange={(event) => scrub(Number(event.target.value) / 1000)}
-          />
-          <span className="w-12 text-right font-mono text-[11px] tabular-nums text-muted">
-            {formatDuration(totalTime)}
-          </span>
-        </div>
-
-        {/* Row 2: Controls + Speed + Mode */}
-        <div className="flex items-center justify-between gap-1.5">
-          <div className="flex items-center gap-1">
-            <IconButton label="Restart" onClick={restart}>
-              <Square className="size-4" />
-            </IconButton>
-            <IconButton label="Step back" onClick={() => step(-1)}>
-              <SkipBack className="size-4" />
-            </IconButton>
-            <IconButton label={playing ? "Pause" : "Play"} onClick={togglePlay} highlight>
-              {playing ? <Pause className="size-4" /> : <Play className="size-4" />}
-            </IconButton>
-            <IconButton label="Step forward" onClick={() => step(1)}>
-              <SkipForward className="size-4" />
-            </IconButton>
+      {compact ? (
+        /* ── Compact 2-Row Layout (For Mobile, Tablet Split, or narrow views) ── */
+        <div className="flex flex-col gap-1.5">
+          {/* Row 1: Scrubber with timestamps */}
+          <div className="flex items-center gap-2">
+            <span className="w-12 shrink-0 text-left font-mono text-[11px] tabular-nums text-muted">
+              {formatDuration(currentTime)}
+            </span>
+            <label className="sr-only" htmlFor="scrub-compact">
+              Timeline
+            </label>
+            <input
+              id="scrub-compact"
+              className="h-8 min-w-0 flex-1 accent-primary touch-pan-x"
+              type="range"
+              min={0}
+              max={1000}
+              value={Math.round(cursor * 1000)}
+              onChange={(event) => scrub(Number(event.target.value) / 1000)}
+            />
+            <span className="w-12 shrink-0 text-right font-mono text-[11px] tabular-nums text-muted">
+              {formatDuration(totalTime)}
+            </span>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <select
-              aria-label="Playback speed"
-              className="h-9 rounded-md border border-border bg-bg px-2 font-mono text-xs text-fg outline-none"
-              value={speed}
-              onChange={(event) => setSpeed(Number(event.target.value))}
-            >
-              {SPEEDS.map((value) => (
-                <option key={value} value={value}>
-                  {value}×
-                </option>
-              ))}
-            </select>
+          {/* Row 2: Controls + Speed + Mode */}
+          <div className="flex items-center justify-between gap-1.5">
+            <div className="flex items-center gap-1">
+              <IconButton label="Restart" onClick={restart}>
+                <Square className="size-3.5" />
+              </IconButton>
+              <IconButton label="Step back" onClick={() => step(-1)}>
+                <SkipBack className="size-3.5" />
+              </IconButton>
+              <IconButton label={playing ? "Pause" : "Play"} onClick={togglePlay} highlight>
+                {playing ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
+              </IconButton>
+              <IconButton label="Step forward" onClick={() => step(1)}>
+                <SkipForward className="size-3.5" />
+              </IconButton>
+            </div>
 
-            <button
-              type="button"
-              className={cn(
-                "h-9 rounded-md border border-border px-2.5 text-xs font-medium transition-colors",
-                mode === "estimate" ? "bg-raised text-primary border-primary/50" : "text-muted hover:text-fg",
-              )}
-              onClick={() => setPlayMode(mode === "preview" ? "estimate" : "preview")}
-            >
-              {mode === "preview" ? "Preview" : "Estimate"}
-            </button>
+            <div className="flex items-center gap-1.5">
+              <select
+                aria-label="Playback speed"
+                className="h-8 rounded-md border border-border bg-bg px-2 font-mono text-xs text-fg outline-none"
+                value={speed}
+                onChange={(event) => setSpeed(Number(event.target.value))}
+              >
+                {SPEEDS.map((value) => (
+                  <option key={value} value={value}>
+                    {value}×
+                  </option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                className={cn(
+                  "h-8 rounded-md border border-border px-2 text-xs font-medium transition-colors",
+                  mode === "estimate" ? "bg-raised text-primary border-primary/50" : "text-muted hover:text-fg",
+                )}
+                onClick={() => setPlayMode(mode === "preview" ? "estimate" : "preview")}
+              >
+                {mode === "preview" ? "Preview" : "Estimate"}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        /* ── Full Inline Layout (Desktop and Fullscreen views) ── */
+        <div className="flex flex-col gap-1">
+          {/* Mobile fallback when screen is < sm */}
+          <div className="flex flex-col gap-2 sm:hidden">
+            <div className="flex items-center gap-2">
+              <span className="w-12 text-left font-mono text-[11px] tabular-nums text-muted">
+                {formatDuration(currentTime)}
+              </span>
+              <label className="sr-only" htmlFor="scrub-mobile">
+                Timeline
+              </label>
+              <input
+                id="scrub-mobile"
+                className="h-8 min-w-0 flex-1 accent-primary touch-pan-x"
+                type="range"
+                min={0}
+                max={1000}
+                value={Math.round(cursor * 1000)}
+                onChange={(event) => scrub(Number(event.target.value) / 1000)}
+              />
+              <span className="w-12 text-right font-mono text-[11px] tabular-nums text-muted">
+                {formatDuration(totalTime)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-1.5">
+              <div className="flex items-center gap-1">
+                <IconButton label="Restart" onClick={restart}>
+                  <Square className="size-4" />
+                </IconButton>
+                <IconButton label="Step back" onClick={() => step(-1)}>
+                  <SkipBack className="size-4" />
+                </IconButton>
+                <IconButton label={playing ? "Pause" : "Play"} onClick={togglePlay} highlight>
+                  {playing ? <Pause className="size-4" /> : <Play className="size-4" />}
+                </IconButton>
+                <IconButton label="Step forward" onClick={() => step(1)}>
+                  <SkipForward className="size-4" />
+                </IconButton>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <select
+                  aria-label="Playback speed"
+                  className="h-9 rounded-md border border-border bg-bg px-2 font-mono text-xs text-fg outline-none"
+                  value={speed}
+                  onChange={(event) => setSpeed(Number(event.target.value))}
+                >
+                  {SPEEDS.map((value) => (
+                    <option key={value} value={value}>
+                      {value}×
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className={cn(
+                    "h-9 rounded-md border border-border px-2.5 text-xs font-medium transition-colors",
+                    mode === "estimate" ? "bg-raised text-primary border-primary/50" : "text-muted hover:text-fg",
+                  )}
+                  onClick={() => setPlayMode(mode === "preview" ? "estimate" : "preview")}
+                >
+                  {mode === "preview" ? "Preview" : "Estimate"}
+                </button>
+              </div>
+            </div>
+          </div>
 
-      {/* ── Tablet & Desktop Layout (>= 640px): 1-Row Inline ── */}
-      <div className="hidden sm:flex sm:items-center sm:gap-3">
-        {/* Transport buttons */}
-        <div className="flex shrink-0 items-center gap-1">
-          <IconButton label="Restart" onClick={restart}>
-            <Square className="size-3.5" />
-          </IconButton>
-          <IconButton label="Step back" onClick={() => step(-1)}>
-            <SkipBack className="size-3.5" />
-          </IconButton>
-          <IconButton label={playing ? "Pause" : "Play"} onClick={togglePlay} highlight>
-            {playing ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
-          </IconButton>
-          <IconButton label="Step forward" onClick={() => step(1)}>
-            <SkipForward className="size-3.5" />
-          </IconButton>
-        </div>
+          {/* Inline layout for sm+ */}
+          <div className="hidden sm:flex sm:items-center sm:gap-3">
+            <div className="flex shrink-0 items-center gap-1">
+              <IconButton label="Restart" onClick={restart}>
+                <Square className="size-3.5" />
+              </IconButton>
+              <IconButton label="Step back" onClick={() => step(-1)}>
+                <SkipBack className="size-3.5" />
+              </IconButton>
+              <IconButton label={playing ? "Pause" : "Play"} onClick={togglePlay} highlight>
+                {playing ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
+              </IconButton>
+              <IconButton label="Step forward" onClick={() => step(1)}>
+                <SkipForward className="size-3.5" />
+              </IconButton>
+            </div>
 
-        {/* Scrubber slider with duration markers */}
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="shrink-0 font-mono text-xs tabular-nums text-muted">
-            {formatDuration(currentTime)}
-          </span>
-          <label className="sr-only" htmlFor="scrub">
-            Timeline
-          </label>
-          <input
-            id="scrub"
-            className="h-9 min-w-24 flex-1 accent-primary"
-            type="range"
-            min={0}
-            max={1000}
-            value={Math.round(cursor * 1000)}
-            onChange={(event) => scrub(Number(event.target.value) / 1000)}
-          />
-          <span className="shrink-0 font-mono text-xs tabular-nums text-muted">
-            {formatDuration(totalTime)}
-          </span>
-          <span className="hidden shrink-0 rounded bg-raised px-1.5 py-0.5 font-mono text-[11px] text-muted md:inline-block">
-            {Math.round(cursor * 100)}%
-          </span>
-        </div>
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <span className="shrink-0 font-mono text-xs tabular-nums text-muted">
+                {formatDuration(currentTime)}
+              </span>
+              <label className="sr-only" htmlFor="scrub">
+                Timeline
+              </label>
+              <input
+                id="scrub"
+                className="h-9 min-w-24 flex-1 accent-primary"
+                type="range"
+                min={0}
+                max={1000}
+                value={Math.round(cursor * 1000)}
+                onChange={(event) => scrub(Number(event.target.value) / 1000)}
+              />
+              <span className="shrink-0 font-mono text-xs tabular-nums text-muted">
+                {formatDuration(totalTime)}
+              </span>
+              <span className="hidden shrink-0 rounded bg-raised px-1.5 py-0.5 font-mono text-[11px] text-muted md:inline-block">
+                {Math.round(cursor * 100)}%
+              </span>
+            </div>
 
-        {/* Speed & Mode controls */}
-        <div className="flex shrink-0 items-center gap-2">
-          <select
-            aria-label="Playback speed"
-            className="h-8 rounded-md border border-border bg-bg px-2 font-mono text-xs text-fg outline-none hover:border-primary/60 focus:border-primary"
-            value={speed}
-            onChange={(event) => setSpeed(Number(event.target.value))}
-          >
-            {SPEEDS.map((value) => (
-              <option key={value} value={value}>
-                {value}×
-              </option>
-            ))}
-          </select>
+            <div className="flex shrink-0 items-center gap-2">
+              <select
+                aria-label="Playback speed"
+                className="h-8 rounded-md border border-border bg-bg px-2 font-mono text-xs text-fg outline-none hover:border-primary/60 focus:border-primary"
+                value={speed}
+                onChange={(event) => setSpeed(Number(event.target.value))}
+              >
+                {SPEEDS.map((value) => (
+                  <option key={value} value={value}>
+                    {value}×
+                  </option>
+                ))}
+              </select>
 
-          <div className="flex rounded-md border border-border p-0.5 bg-bg/60">
-            <button
-              type="button"
-              className={cn(
-                "h-7 rounded px-2 text-xs font-medium transition-colors",
-                mode === "preview" ? "bg-raised text-fg shadow-xs" : "text-muted hover:text-fg",
-              )}
-              onClick={() => setPlayMode("preview")}
-            >
-              Preview
-            </button>
-            <button
-              type="button"
-              className={cn(
-                "h-7 rounded px-2 text-xs font-medium transition-colors",
-                mode === "estimate" ? "bg-raised text-fg shadow-xs" : "text-muted hover:text-fg",
-              )}
-              onClick={() => setPlayMode("estimate")}
-            >
-              Time scale
-            </button>
+              <div className="flex rounded-md border border-border p-0.5 bg-bg/60">
+                <button
+                  type="button"
+                  className={cn(
+                    "h-7 rounded px-2 text-xs font-medium transition-colors",
+                    mode === "preview" ? "bg-raised text-fg shadow-xs" : "text-muted hover:text-fg",
+                  )}
+                  onClick={() => setPlayMode("preview")}
+                >
+                  Preview
+                </button>
+                <button
+                  type="button"
+                  className={cn(
+                    "h-7 rounded px-2 text-xs font-medium transition-colors",
+                    mode === "estimate" ? "bg-raised text-fg shadow-xs" : "text-muted hover:text-fg",
+                  )}
+                  onClick={() => setPlayMode("estimate")}
+                >
+                  Time scale
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Subline status info */}
       <div className="mt-1 flex items-center justify-between text-[11px] text-muted">

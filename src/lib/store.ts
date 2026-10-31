@@ -14,6 +14,7 @@ type State = {
   fileName: string;
   fileSize: number;
   source: string;
+  originalSource: string;
   profiles: MachineConfig[];
   profileId: string;
   analysis: Analysis | null;
@@ -43,6 +44,8 @@ type State = {
   openText: (name: string, source: string) => void;
   openFile: (file: File) => Promise<void>;
   openSample: (id: string) => void;
+  updateSource: (nextSource: string, immediate?: boolean) => void;
+  revertSource: () => void;
   setProfileId: (id: string) => void;
   patchProfile: (patch: Partial<MachineConfig>) => void;
   duplicateProfile: () => void;
@@ -125,6 +128,7 @@ export const useInspector = create<State>((set, get) => ({
   fileName: "rounded-plate.nc",
   fileSize: 0,
   source: "",
+  originalSource: "",
   profiles: BUILT_IN_PROFILES,
   profileId: BUILT_IN_PROFILES[0].id,
   analysis: null,
@@ -169,6 +173,7 @@ export const useInspector = create<State>((set, get) => ({
       fileName: "rounded-plate.nc",
       fileSize: new Blob([sample.source]).size,
       source: sample.source,
+      originalSource: sample.source,
     });
     await runInspect(get, set, sample.source, activeProfile(profiles, profiles[0]?.id ?? ""));
   },
@@ -182,6 +187,7 @@ export const useInspector = create<State>((set, get) => ({
       fileName: name,
       fileSize: new Blob([source]).size,
       source,
+      originalSource: source,
       error: null,
       mobileTab: "view",
     });
@@ -209,6 +215,41 @@ export const useInspector = create<State>((set, get) => ({
   openSample: (id) => {
     const sample = sampleById(id);
     get().openText(`${sample.id}.nc`, sample.source);
+  },
+
+  updateSource: (nextSource: string, immediate = false) => {
+    const size = new Blob([nextSource]).size;
+    if (size > MAX_FILE_BYTES) {
+      set({ error: "File is over 8 MB.", status: "error" });
+      return;
+    }
+    set({
+      source: nextSource,
+      fileSize: size,
+      error: null,
+    });
+    if (debounce) clearTimeout(debounce);
+    if (immediate) {
+      const { profiles, profileId } = get();
+      void runInspect(get, set, nextSource, activeProfile(profiles, profileId));
+    } else {
+      debounce = setTimeout(() => {
+        const { profiles, profileId } = get();
+        void runInspect(get, set, nextSource, activeProfile(profiles, profileId));
+      }, 500);
+    }
+  },
+
+  revertSource: () => {
+    const { originalSource, profiles, profileId } = get();
+    if (!originalSource) return;
+    set({
+      source: originalSource,
+      fileSize: new Blob([originalSource]).size,
+      error: null,
+    });
+    if (debounce) clearTimeout(debounce);
+    void runInspect(get, set, originalSource, activeProfile(profiles, profileId));
   },
 
   setProfileId: (id) => {
